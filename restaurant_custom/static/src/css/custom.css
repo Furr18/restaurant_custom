@@ -1,0 +1,3 @@
+.o_form_label[data-field-name="reservation_lines"] {
+    display: none; /* Menyembunyikan label utama */
+}

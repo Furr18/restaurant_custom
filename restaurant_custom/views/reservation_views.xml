@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!-- Action for Reservations -->
+        <record id="action_reservation" model="ir.actions.act_window">
+            <field name="name">Reservations</field>
+            <field name="res_model">restaurant.reservation</field>
+            <field name="view_mode">tree,form,gantt</field> 
+            <field name="help" type="html">
+                <p class="oe_view_nocontent_create">
+                    Click to create new reservations.
+                </p>
+            </field>
+        </record>
+
+        <!-- <record id="action_reservation_gantt" model="ir.actions.act_window">
+            <field name="name">Reservation Gantt</field>
+            <field name="res_model">restaurant.reservation</field>
+            <field name="view_mode">gantt</field>
+        </record>
+        
+        <record id="view_reservation_gantt" model="ir.ui.view">
+            <field name="name">Reservation Gantt</field>
+            <field name="model">restaurant.reservation</field>
+            <field name="arch" type="xml">
+                <gantt string="Reservations" date_start="date_start" date_stop="date_end">
+                    <field name="gantt_label"/>
+                    <field name="reservation_code" string="Reservation Code"/>       
+                </gantt>
+            </field>
+        </record> -->
+        
+        <record id="action_reservation_gantt" model="ir.actions.act_window">
+            <field name="name">Reservation Gantt</field>
+            <field name="res_model">restaurant.reservation</field>
+            <field name="view_mode">gantt</field>
+            <field name="context">{'gantt_view': True}</field> 
+            <field name="domain">[('status', 'not in', ['cancelled'])]</field> 
+            <field name="view_id" ref="view_reservation_gantt"/> 
+        </record>
+        
+        <record id="view_reservation_gantt" model="ir.ui.view">
+            <field name="name">Reservation Gantt</field>
+            <field name="model">restaurant.reservation</field>
+            <field name="arch" type="xml">
+                <gantt
+                        create="0" delete="0" edit="1" 
+                        date_start="date_start" 
+                        date_stop="date_end"
+                        default_group_by="status" 
+                        default_scale="month" 
+                        color="status" 
+                        scales="day,month,year" 
+                        precision="{'day': 'hour:full', 'month': 'day:full', 'year': 'day:full'}"> 
+                        
+                    <field name="reservation_code" string="Reservation Code"/> 
+                    <field name="name" string="Reservation Code"/> 
+                    <field name="email" string="Reservation Code"/>    
+                    <field name="date_start" string="Reservation Code"/>   
+                    <field name="date_end" string="Reservation Code"/>   
+                    <templates>
+                        <div t-name="gantt-popover"> <!-- Template untuk popover saat hover -->
+                            <ul>
+                                <li><strong>Reservation Code:</strong> <t t-esc="reservation_code"/></li> <!-- Menampilkan kode reservasi -->
+                                <li><strong>Customer Name:</strong><t t-esc="name"/></li> <!-- Menampilkan nama pelanggan -->
+                                <li><strong>Date Start:</strong><t t-esc="date_start"/></li> <!-- Menampilkan nama pelanggan -->
+                                <li><strong>Date End:</strong><t t-esc="date_end"/></li> <!-- Menampilkan nama pelanggan -->
+                                <li><strong>Email:</strong> <t t-esc="email"/></li> <!-- Menampilkan email pelanggan -->
+        
+                            </ul>
+                        </div>
+                    </templates>
+                </gantt>
+            </field>
+        </record>
+        
+
+        <!-- Menu Items -->
+        <menuitem id="menu_reservation_root" name="Restaurant Management" web_icon="restaurant_custom,static/odoo_icon.png"/>
+        <menuitem id="menu_reservation" name="Reservations" parent="menu_reservation_root" action="action_reservation" sequence="1"/>
+        <menuitem id="menu_gantt" name="Gantt View" parent="menu_reservation_root" action="action_reservation_gantt" sequence="3"/>
+
+        <!-- Tree View for Reservations -->
+        <record id="view_reservation_tree" model="ir.ui.view">
+            <field name="name">reservation.tree</field>
+            <field name="model">restaurant.reservation</field>
+            <field name="arch" type="xml">
+                <tree string="Reservations">
+                    <field name="reservation_code" string="Reservation Code"/>
+                    <field name="name" string="Customer Name"/>
+                    <field name="email" string="email"/>
+                    <field name="status" string="Status"/>
+                </tree>
+            </field>
+        </record>
+
+        <!-- Form View for Reservations -->
+        <record id="view_reservation_form" model="ir.ui.view">
+            <field name="name">reservation.form</field>
+            <field name="model">restaurant.reservation</field>
+            <field name="arch" type="xml">
+                <form string="Reservation Details">
+                    <header>
+                        <button name="action_confirm" type="object" string="Confirm" class="btn-primary" 
+                                attrs="{'invisible': [('status', '!=', 'pending')]}" />
+                        <button name="action_cancel" type="object" string="Cancel" class="btn-secondary" 
+                                attrs="{'invisible': [('status', '!=', 'confirmed')]}" />
+                        <button name="action_back_to_pending" type="object" string="Back to Pending" 
+                                attrs="{'invisible': [('status', '!=', 'cancelled')]}" />
+                        <field name="status" widget="statusbar" 
+                               statusbar_visible="pending,confirmed,cancelled" 
+                               statusbar_colors='{"confirmed":"blue","cancelled":"red"}'/>
+                    </header>
+                    <sheet>
+                        <div class="oe_title">
+                            <label for="reservation_code" class="oe_edit_only"/>
+                            <h1>
+                                <field name="reservation_code" placeholder="Reservation Code" readonly="1"/>
+                            </h1>
+                        </div>
+                        <group>
+                            <group>
+                                <field name="name" placeholder="Customer Name" 
+                                       attrs="{'readonly': [('status', '=', 'confirmed')]}"/>
+                                <field name="email" placeholder="Customer Email" 
+                                       attrs="{'readonly': [('status', '=', 'confirmed')]}"/>   
+                            </group>
+                        </group>
+                        <notebook>
+                            <page string="Reservation Details">
+                                <group>
+                                    <field name="reservation_lines" widget="one2many_tags" 
+                                           options="{'no_create': True, 'no_edit': False}"
+                                           attrs="{'readonly': [('status', '=', 'confirmed')]}">
+                                        <tree editable="bottom" style="display: flex; flex-wrap: wrap;">
+                                            <field name="date_start" widget="datetime" string="Start Time" placeholder="Start Time" />
+                                            <field name="date_end" widget="datetime" string="End Time" placeholder="End Time"/>
+                                            <field name="guest" string="Number of Guests" placeholder="Number of Guests"/>
+                                            <field name="table" string="Table" placeholder="Table"/>
+                                            <field name="note" string="Notes" placeholder="Notes"/>
+                                        </tree>
+                                    </field>
+                                </group>
+                            </page>
+                        </notebook>
+                        
+                        
+                    </sheet>
+                </form>
+            </field>
+        </record>
+               
+        <!-- Action for Tables -->
+        <record id="action_table" model="ir.actions.act_window">
+            <field name="name">Tables</field>
+            <field name="res_model">restaurant.table</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+
+        <!-- Menu Items for Tables -->
+        <menuitem id="menu_table" name="Tables" parent="menu_reservation_root" action="action_table" sequence="2"/>
+
+        <!-- Tree View for Tables -->
+        <record id="view_table_tree" model="ir.ui.view">
+            <field name="name">table.tree</field>
+            <field name="model">restaurant.table</field>
+            <field name="arch" type="xml">
+                <tree string="Tables">
+                    <field name="name" string="Table Number"/>
+                    <field name="capacity" string="Capacity"/>
+                </tree>
+            </field>
+        </record>
+
+        <!-- Form View for Tables -->
+        <record id="view_table_form" model="ir.ui.view">
+            <field name="name">table.form</field>
+            <field name="model">restaurant.table</field>
+            <field name="arch" type="xml">
+                <form string="Table Details">
+                    <sheet>
+                        <group>
+                            <field name="name" placeholder="Table Name"/>
+                            <field name="capacity" placeholder="Capacity"/>
+                            <field name="is_available"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+    </data>
+</odoo>
